@@ -1,0 +1,555 @@
+<!-- =========================================
+[벤토그리드 고정 쉘] + [주석/삽입 위치 안내]
+- #lego-board 안에는 "카드 div"만 넣기 (script 금지)
+- config/script/sticky-bar는 #lego-board 밖에 두기
+========================================= -->
+
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>벤토그리드(흥신소 Version)</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              primary: '#1e3a8a',
+              secondary: '#fbbf24',
+              bg: '#0f172a'
+            }
+          },
+          animation: {
+            'blob': 'blob 7s infinite',
+            'fade-in-up': 'fadeInUp 0.8s ease-out forwards'
+          },
+          keyframes: {
+            blob: {
+              '0%': { transform: 'translate(0px, 0px) scale(1)' },
+              '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+              '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+              '100%': { transform: 'translate(0px, 0px) scale(1)' },
+            },
+            fadeInUp: {
+              '0%': { opacity: '0', transform: 'translateY(20px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+
+
+  <style>
+    body { font-family: 'Pretendard', sans-serif; overflow-x: hidden; }
+
+    .readable{
+      line-height:1.75;
+      letter-spacing:-0.01em;
+      word-break:keep-all;
+      overflow-wrap:anywhere;
+    }
+    .readable p + p { margin-top: 0.75rem; }
+
+    /* iOS safe area */
+    .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+    /* 오로라 배경 */
+    .aurora-bg {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1;
+      background: radial-gradient(circle at 50% 50%, rgba(30, 58, 138, 0.15), transparent 50%);
+    }
+    .aurora-blob {
+      position: absolute; filter: blur(80px); opacity: 0.4; animation: blob 10s infinite;
+    }
+
+    /* 유리 카드 스타일 */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 1.5rem;
+      transition: all 0.3s ease;
+    }
+    .glass-card:hover {
+      border-color: #fbbf24;
+      box-shadow: 0 0 30px -5px rgba(251, 191, 36, 0.15);
+      transform: translateY(-5px);
+    }
+
+    .reveal { animation: fadeInUp 0.8s ease-out forwards; }
+  </style>
+</head>
+
+<body x-data="{ mobileMenuOpen: false }" class="bg-[#0f172a] text-white">
+
+  <div class="aurora-bg">
+    <div class="aurora-blob bg-brand-primary w-96 h-96 top-0 left-10 rounded-full mix-blend-multiply"></div>
+    <div class="aurora-blob bg-brand-secondary w-96 h-96 bottom-0 right-10 rounded-full mix-blend-multiply"
+         style="animation-delay:2000ms"></div>
+  </div>
+
+  <nav class="fixed w-full z-50 top-0 backdrop-blur-md border-b border-white/5 bg-[#0f172a]/80">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+      <div class="text-2xl font-bold tracking-tighter text-white">
+        흥신소<span class="text-brand-secondary">TV</span>
+      </div>
+      <div class="hidden md:flex space-x-8 text-sm font-medium text-gray-300">
+        <a href="#hero" class="hover:text-brand-secondary">서비스 소개</a>
+        <a href="#form" class="hover:text-brand-secondary">전문가 찾기</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ✅ PC에서도 2열이 잘 보이게: max-w-[520px] 고정은 제거하고, max-w-7xl 사용 -->
+  <!-- ✅ 하단 스티키바 때문에 모바일에서 가려지지 않게 pb-28 -->
+  <main class="pt-24 pb-28 md:pb-20 px-4 md:px-10 max-w-7xl mx-auto">
+
+    <!-- =======================================================
+    [1] CONFIG: 여기만 바꾸면 이미지/링크/전화/카톡/DB URL이 다 바뀜
+    - ⚠️ 이 블록은 #lego-board 안에 넣으면 레이아웃 망가짐 (그리드 아이템이 됨)
+    ======================================================== -->
+<script>
+  window.siteConfig = {
+    // ✅ 이미지: 입력해주신 프로필 사진 (추가 시 갤러리에 자동 반영)
+    images: [
+      { key: "profile", url: "https://흥신소탐정사무소.kr/wp-content/uploads/2026/01/%EC%B6%A9%EC%8B%A4%EC%9E%A5%EB%8B%98-%ED%94%84%EB%A1%9C%ED%95%84.png", label: "충실장 프로필" }
+    ],
+
+    // ✅ 링크: 유튜브 채널 (추가 시 버튼 자동 생성)
+    links: [
+      { key: "youtube", url: "https://www.youtube.com/@tv2297", label: "YouTube 채널" }
+    ],
+
+    // ✅ 연락처: 전화번호 및 카카오톡 오픈채팅
+    contact: {
+      phone: "010-6838-2052",
+      telLink: "tel:01068382052",
+      kakao: "https://open.kakao.com/o/s6ZmQZMe"
+    },
+
+    // ✅ DB: 구글 Apps Script Web App URL
+    scriptUrl: "https://script.google.com/macros/s/AKfycbxtpIA7LcupHFsAtb6uXxPCC56gOfGFIX-byEUiSRma8Fg8nMd4HSn_eJuddBR_YmfmJA/exec"
+  };
+</script>
+
+    <!-- =======================================================
+    [2] LEGO BOARD: 여기 안에는 "카드 div"만 붙여넣기 (script 금지)
+    ======================================================== -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 auto-rows-[minmax(160px,auto)] sm:grid-flow-dense" id="lego-board">
+
+<div id="hero" class="glass-card p-8 sm:col-span-2 flex flex-col justify-center min-h-[400px] relative overflow-hidden anchor-offset group">
+      <div class="absolute top-0 right-0 w-64 h-64 bg-brand-primary rounded-full blur-[100px] opacity-20 group-hover:opacity-30 transition duration-700"></div>
+      
+      <div class="relative z-10 max-w-2xl">
+        <span class="inline-block px-3 py-1 mb-4 text-xs font-bold tracking-wider text-brand-secondary border border-brand-secondary/30 rounded-full bg-brand-secondary/10">
+          은퇴 탐정의 안심 컨설팅
+        </span>
+        <h1 class="text-4xl sm:text-5xl font-bold leading-tight mb-6 text-white readable">
+          탐정 업계의 생리,<br>
+          <span class="text-brand-secondary">충실장</span>이 옥석을 가려드립니다.
+        </h1>
+        <div class="readable text-gray-300 text-lg mb-8">
+          <p>
+            업계 내 사기나 역협박이 두려워 망설이고 계신가요?
+            수많은 실전 사례를 겪은 전직 탐정이 당신의 편에서 
+            가장 안전하고 확실한 전문가를 연결해 드립니다.
+          </p>
+        </div>
+        
+        <div class="flex flex-col sm:flex-row gap-3">
+          <a href="#form" class="w-full sm:w-auto text-center px-8 py-4 bg-brand-primary hover:bg-blue-800 text-white font-bold rounded-xl transition shadow-lg shadow-blue-900/30">
+            안심 상담 신청하기
+          </a>
+          <a href="#process" class="w-full sm:w-auto text-center px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-medium border border-white/10 rounded-xl transition backdrop-blur-sm">
+            이용 절차 보기
+          </a>
+        </div>
+      </div>
+
+      <div class="mt-8 sm:mt-0 sm:absolute sm:right-5 sm:bottom-0 w-full sm:w-80 h-80 sm:h-96 opacity-90">
+        <img :src="window.siteConfig.images[0].url" alt="충실장 프로필" class="w-full h-full object-cover object-top rounded-t-2xl mask-image-gradient">
+      </div>
+    </div>
+
+    <div id="anxiety" class="glass-card p-6 sm:col-span-2 anchor-offset">
+      <div class="flex flex-col sm:flex-row gap-8 items-start">
+        <div class="flex-1">
+          <h2 class="text-2xl font-bold mb-4 text-red-400">
+            "의뢰했다가 오히려 협박당하면 어쩌죠?"
+          </h2>
+          <div class="readable text-gray-300 space-y-4">
+            <p>
+              흥신소나 탐정을 찾을 때 가장 두려운 것은 
+              비용보다 '신뢰'의 문제입니다.
+            </p>
+            <p>
+              잘못된 업체를 만나면 정보가 유출되거나, 
+              해결은커녕 역으로 협박을 당해 
+              더 큰 고통을 겪기도 합니다.
+            </p>
+          </div>
+        </div>
+        <div class="flex-1 bg-red-500/5 p-5 rounded-xl border border-red-500/20 w-full">
+          <h3 class="font-bold text-white mb-3">⚠️ 의뢰인이 겪는 3가지 위험</h3>
+          <ul class="space-y-3 text-sm text-gray-300">
+            <li class="flex items-start gap-2">
+              <span class="text-red-400">✕</span>
+              <span><strong>먹튀/사기:</strong> 착수금만 받고 연락이 두절되는 경우</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-red-400">✕</span>
+              <span><strong>정보 유출/역협박:</strong> 의뢰 내용을 빌미로 돈을 요구</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-red-400">✕</span>
+              <span><strong>비전문성:</strong> 복잡한 사건을 혼자 처리하려다 망침</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div id="usp" class="glass-card p-6 anchor-offset">
+      <h2 class="text-xl font-bold mb-5 text-brand-secondary">
+        왜 충실장이어야 할까요?
+      </h2>
+      <ul class="space-y-4">
+        <li class="bg-white/5 p-4 rounded-lg border border-white/5">
+          <strong class="block text-white mb-1">🔍 은퇴 탐정의 통찰력</strong>
+          <span class="text-sm text-gray-400 readable">
+            일반인은 알 수 없는 업계의 생리를 꿰뚫고 있어, 
+            진짜 실력 있는 전문가와 사기꾼을 정확히 구별합니다.
+          </span>
+        </li>
+        <li class="bg-white/5 p-4 rounded-lg border border-white/5">
+          <strong class="block text-white mb-1">🛡️ 리스크 필터링</strong>
+          <span class="text-sm text-gray-400 readable">
+            질 나쁜 업체를 사전에 차단합니다. 
+            검증된 전문가만을 연결하여 가장 안전한 의뢰 환경을 제공합니다.
+          </span>
+        </li>
+      </ul>
+    </div>
+
+    <div id="proof" class="glass-card p-6 anchor-offset">
+      <h2 class="text-xl font-bold mb-4">공개된 활동으로 증명합니다</h2>
+      <div class="readable text-gray-300 text-sm mb-6">
+        <p>
+          유튜브 '충실장 TV'를 통해 실제 사례를 분석하고 
+          사기 피해 예방 활동을 꾸준히 해왔습니다.
+          음지에서 활동하는 브로커가 아닙니다.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap gap-2 mb-6" x-data>
+        <template x-for="link in window.siteConfig.links">
+          <a :href="link.url" target="_blank" 
+             class="inline-flex items-center gap-2 px-4 py-2 bg-[#ff0000] hover:bg-[#cc0000] text-white text-sm font-bold rounded-lg transition">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+            <span x-text="link.label"></span>
+          </a>
+        </template>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2" x-data>
+        <template x-for="img in window.siteConfig.images">
+          <div class="relative aspect-square rounded-lg overflow-hidden bg-black/50 border border-white/10 group">
+            <img :src="img.url" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">
+            <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/80 to-transparent p-2">
+              <span class="text-xs text-white font-medium" x-text="img.label"></span>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <div id="process" class="glass-card p-6 sm:col-span-2 anchor-offset">
+      <h2 class="text-xl font-bold mb-6 text-center">안전한 문제 해결 프로세스</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div class="relative p-4 bg-white/5 rounded-xl border border-white/10 text-center">
+          <div class="text-2xl mb-2">📞</div>
+          <h3 class="font-bold text-brand-secondary mb-1">STEP 1</h3>
+          <p class="text-sm text-gray-300">상담 신청<br>(사건 개요 접수)</p>
+        </div>
+        <div class="relative p-4 bg-white/5 rounded-xl border border-white/10 text-center">
+          <div class="text-2xl mb-2">⚖️</div>
+          <h3 class="font-bold text-brand-secondary mb-1">STEP 2</h3>
+          <p class="text-sm text-gray-300">사안 분석<br>& 리스크 진단</p>
+        </div>
+        <div class="relative p-4 bg-white/5 rounded-xl border border-white/10 text-center">
+          <div class="text-2xl mb-2">🤝</div>
+          <h3 class="font-bold text-brand-secondary mb-1">STEP 3</h3>
+          <p class="text-sm text-gray-300">최적 전문가<br>매칭 및 팀 구성</p>
+        </div>
+        <div class="relative p-4 bg-white/5 rounded-xl border border-white/10 text-center">
+          <div class="text-2xl mb-2">🛡️</div>
+          <h3 class="font-bold text-brand-secondary mb-1">STEP 4</h3>
+          <p class="text-sm text-gray-300">안전한 업무<br>& 사후 조언</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="case" class="glass-card p-6 anchor-offset">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="px-2 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded">BEST 사례</span>
+      </div>
+      <h3 class="text-lg font-bold mb-3">"사기 업체를 피하고 해결했어요"</h3>
+      <div class="readable text-gray-300 text-sm bg-white/5 p-4 rounded-lg">
+        <p class="mb-2">
+          "배우자의 외도 증거가 필요해 급하게 흥신소를 찾고 있었습니다. 
+          처음 연락한 곳에서는 무조건 100% 잡을 수 있다며 큰 돈을 요구하더군요."
+        </p>
+        <p>
+          "불안한 마음에 충실장님께 진단을 요청했고, 
+          해당 업체가 과거 문제가 있었던 곳임을 알게 되었습니다. 
+          덕분에 검증된 팀을 소개받아 안전하게 증거를 확보했습니다."
+        </p>
+      </div>
+    </div>
+
+    <div id="compare" class="glass-card p-6 anchor-offset">
+      <h2 class="text-xl font-bold mb-5">일반 업체 vs 충실장 TV</h2>
+      <div class="space-y-3 text-sm">
+        <div class="grid grid-cols-2 gap-4 pb-2 border-b border-white/10 font-bold text-gray-400">
+          <span>일반 중개/업체</span>
+          <span class="text-brand-secondary">충실장 매칭</span>
+        </div>
+        <div class="grid grid-cols-2 gap-4 items-center">
+          <span class="text-gray-400">나홀로 탐정 (한계 명확)</span>
+          <span class="text-white font-medium">분야별 전문가 팀 구성</span>
+        </div>
+        <div class="grid grid-cols-2 gap-4 items-center">
+          <span class="text-gray-400">검증 불가능 (위험)</span>
+          <span class="text-white font-medium">실전 데이터로 검증</span>
+        </div>
+        <div class="grid grid-cols-2 gap-4 items-center">
+          <span class="text-gray-400">추가 비용/역협박 우려</span>
+          <span class="text-white font-medium">안전 우선 리스크 관리</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="checklist" class="glass-card p-6 sm:col-span-2 anchor-offset">
+      <h2 class="text-xl font-bold mb-4 text-center">이런 분들은 꼭 상담받으세요</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+          <div class="w-5 h-5 rounded-full bg-brand-primary flex items-center justify-center text-xs">✓</div>
+          <span class="text-gray-300 text-sm">어떤 업체가 진짜인지 구별이 안 되시는 분</span>
+        </div>
+        <div class="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+          <div class="w-5 h-5 rounded-full bg-brand-primary flex items-center justify-center text-xs">✓</div>
+          <span class="text-gray-300 text-sm">업체의 역협박이나 정보 유출이 두려우신 분</span>
+        </div>
+        <div class="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+          <div class="w-5 h-5 rounded-full bg-brand-primary flex items-center justify-center text-xs">✓</div>
+          <span class="text-gray-300 text-sm">내 사건이 특수해서 전문가 팀이 필요하신 분</span>
+        </div>
+        <div class="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+          <div class="w-5 h-5 rounded-full bg-brand-primary flex items-center justify-center text-xs">✓</div>
+          <span class="text-gray-300 text-sm">법적 테두리 안에서 안전하게 해결하고 싶은 분</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="faq" class="glass-card p-6 anchor-offset">
+      <h2 class="text-xl font-bold mb-6">자주 묻는 질문</h2>
+      <div class="space-y-6">
+        <div>
+          <h3 class="font-bold text-white mb-2 text-sm flex items-start gap-2">
+            <span class="text-brand-secondary">Q.</span>
+            탐정 한 명이 다 해결해주는 게 아닌가요?
+          </h3>
+          <p class="text-gray-400 text-sm pl-6 readable">
+            탐정업도 분야가 매우 세분화되어 있습니다. 
+            한 명이 모든 것을 하기보다는, 각 분야 최고 전문가들을 
+            팀으로 구성하는 것이 훨씬 빠르고 정확합니다.
+          </p>
+        </div>
+        <div>
+          <h3 class="font-bold text-white mb-2 text-sm flex items-start gap-2">
+            <span class="text-brand-secondary">Q.</span>
+            비용은 얼마나 드나요?
+          </h3>
+          <p class="text-gray-400 text-sm pl-6 readable">
+            사안의 난이도와 필요한 인력, 기간에 따라 달라집니다.
+            무조건 최저가를 제시하는 곳은 의심해야 합니다.
+            상담을 통해 합리적이고 투명한 견적을 안내해 드립니다.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div id="form" class="glass-card p-6 sm:col-span-2 anchor-offset" x-data="contactForm()">
+      <div class="text-center mb-8">
+        <h2 class="text-2xl font-bold mb-2">전문가 진단 요청</h2>
+        <p class="text-gray-400 text-sm">
+          비밀은 절대적으로 보장됩니다. <br>
+          내용을 남겨주시면 충실장이 직접 분석 후 연락드립니다.
+        </p>
+      </div>
+
+      <form @submit.prevent="submitForm" class="space-y-4 max-w-lg mx-auto">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1 ml-1">성함 (또는 닉네임)</label>
+          <input type="text" x-model="formData.name" required placeholder="예: 홍길동"
+            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-secondary transition">
+        </div>
+        
+        <div>
+          <label class="block text-xs text-gray-400 mb-1 ml-1">연락처</label>
+          <input type="tel" x-model="formData.phone" required placeholder="010-0000-0000"
+            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-secondary transition">
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-400 mb-1 ml-1">의뢰 유형</label>
+          <select x-model="formData.type"
+            class="w-full bg-[#1e293b] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-secondary transition">
+            <option>가정/개인 문제</option>
+            <option>기업/산업 보안</option>
+            <option>사기/금전 피해</option>
+            <option>스토킹/신변 보호</option>
+            <option>기타 특수 조사</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-400 mb-1 ml-1">상담 내용 (간략히)</label>
+          <textarea x-model="formData.summary" rows="3" placeholder="현재 겪고 계신 상황을 간단히 적어주세요."
+            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-secondary transition resize-none"></textarea>
+        </div>
+
+        <div class="pt-2">
+          <button type="submit" :disabled="loading"
+            class="w-full bg-brand-primary hover:bg-blue-800 text-white font-bold py-4 rounded-xl transition shadow-lg shadow-blue-900/30 flex items-center justify-center gap-2">
+            <span x-show="!loading">무료 진단 신청하기</span>
+            <span x-show="loading" class="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></span>
+          </button>
+        </div>
+
+        <div x-show="message" x-transition class="text-center p-3 rounded-lg text-sm font-medium"
+             :class="status === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'">
+          <span x-text="message"></span>
+        </div>
+      </form>
+    </div>
+
+    <div id="footer" class="p-8 sm:col-span-2 text-center text-xs text-gray-500 space-y-2 border-t border-white/5 mt-8">
+      <div class="flex justify-center items-center gap-2 mb-4 opacity-50">
+        <span class="font-bold text-lg text-white">흥신소<span class="text-brand-secondary">TV</span></span>
+      </div>
+      <p>
+        대표: 충실장 | 고객센터: 010-6838-2052<br>
+        본 서비스는 합법적인 탐정 업무 및 컨설팅만을 수행합니다.<br>
+        불법적인 의뢰(도청, 위치추적 등)는 절대 받지 않습니다.
+      </p>
+      <p class="pt-4 opacity-50">Copyright © 2024 Detective Chung. All rights reserved.</p>
+    </div>
+    </div>
+
+    <!-- =======================================================
+    [3] FIXED BAR: 전화/카톡 고정 (모바일/PC 둘 다 보이게 하려면 md:hidden 제거)
+    - 지금 코드는 md:hidden이라 "모바일만" 보임.
+    - PC도 같이 따라오게 하려면 md:hidden을 지우면 됨.
+    ======================================================== -->
+    <!-- [3] FIXED BAR (PASTE OUTSIDE #lego-board) -->
+<div class="fixed bottom-0 left-0 w-full z-50 bg-[#0f172a]/90 backdrop-blur-lg border-t border-white/10 p-4 pb-6 safe-area-bottom flex justify-center">
+  <div class="w-full max-w-3xl flex gap-3">
+    <a :href="window.siteConfig.contact.telLink"
+       class="flex-1 bg-white text-brand-bg font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg hover:bg-gray-100 transition">
+       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+       전화 상담
+    </a>
+    <a :href="window.siteConfig.contact.kakao" target="_blank"
+       class="flex-1 bg-brand-secondary text-brand-bg font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg hover:bg-yellow-400 transition">
+       <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.707 4.8 4.27 6.054-.188.702-.682 2.545-.78 2.94-.122.49.178.483.376.351.279-.186 3.045-2.055 3.54-2.39.528.076 1.07.115 1.62.115 4.97 0 9-3.186 9-7.115S16.97 3 12 3z"/></svg>
+       카톡 문의
+    </a>
+  </div>
+</div>
+
+  </main>
+
+  <!-- =======================================================
+  [4] FORM LOGIC: contactForm() 정의 (⚠️ #lego-board 밖)
+  - x-data="contactForm()"이 있으니 함수가 필요함
+  - 이 script도 #lego-board 안에 넣으면 레이아웃 망가짐
+  ======================================================== -->
+ <script>
+  function contactForm() {
+    return {
+      formData: { name: '', phone: '', type: '가정/개인 문제', summary: '' },
+      loading: false,
+      message: '',
+      status: '', // 'success' or 'error'
+
+      submitForm() {
+        const scriptURL = window.siteConfig.scriptUrl;
+        
+        // URL 유효성 검사
+        if (!scriptURL || !scriptURL.includes('script.google.com')) {
+          this.status = 'error';
+          this.message = '시스템 설정 오류: 관리자에게 문의하세요 (DB 미연동)';
+          return;
+        }
+
+        this.loading = true;
+        this.message = '';
+
+        const data = new FormData();
+        data.append('name', this.formData.name);
+        data.append('phone', this.formData.phone);
+        data.append('type', this.formData.type);
+        data.append('summary', this.formData.summary);
+        data.append('created_at', new Date().toISOString());
+
+        fetch(scriptURL, { method: 'POST', body: data })
+          .then(response => {
+             // 구글 스크립트는 CORS 문제로 opaque response를 줄 때가 많음 (에러 없으면 성공 간주)
+             this.status = 'success';
+             this.message = '접수되었습니다. 충실장이 곧 연락드리겠습니다.';
+             this.formData = { name: '', phone: '', type: '가정/개인 문제', summary: '' };
+          })
+          .catch(error => {
+            this.status = 'error';
+            this.message = '전송 실패. 전화로 문의 부탁드립니다.';
+            console.error('Error:', error);
+          })
+          .finally(() => {
+            this.loading = false;
+            // 5초 후 메시지 초기화
+            setTimeout(() => { this.message = ''; }, 5000);
+          });
+      }
+    }
+  }
+</script>
+
+  <!-- reveal 애니메이션(카드 등장) -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('reveal');
+            observer.unobserve(entry.target);
+          }
+        });
+      });
+      document.querySelectorAll('#lego-board > div').forEach((el) => observer.observe(el));
+    });
+  </script>
+
+</body>
+</html>
